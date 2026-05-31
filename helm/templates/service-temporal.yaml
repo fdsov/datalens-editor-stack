@@ -1,0 +1,13 @@
+{{- if .Values.infra.temporal.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: temporal-cip
+spec:
+  selector:
+    app: temporal
+  ports:
+  - protocol: TCP
+    port: 7233
+  clusterIP: None
+{{- end }}

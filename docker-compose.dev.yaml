@@ -1,0 +1,266 @@
+services:
+  postgres:
+    extends:
+      file: docker-compose.yaml
+      service: postgres
+    networks:
+      - default
+  #
+  temporal:
+    extends:
+      file: docker-compose.yaml
+      service: temporal
+    environment:
+      TEMPORAL_AUTH_ENABLED: false
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - default
+  #
+  temporal-ui:
+    container_name: datalens-temporal-ui
+    image: ghcr.io/datalens-tech/temporal-ui:2.34.0
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_AUTH_ENABLED: false
+    depends_on:
+      - temporal
+    ports:
+      - 8233:8080
+    networks:
+      - default
+  #
+  control-api:
+    extends:
+      file: docker-compose.yaml
+      service: control-api
+    image: datalens-dev:control-api
+    build:
+      context: ./dev/python
+      args:
+        - image=ghcr.io/datalens-tech/datalens-control-api:0.2457.0
+    tty: true
+    environment:
+      RUN_DEV: /etc/service/dl_api/run
+      PRETTY_LOG: ${PRETTY_LOG:-false}
+    volumes:
+      - ../datalens-backend/app:/src/app
+      - ../datalens-backend/lib:/src/lib
+      - ../datalens-backend/metapkg:/src/metapkg
+    ports:
+      - 8010:8080
+    networks:
+      - default
+  #
+  data-api:
+    extends:
+      file: docker-compose.yaml
+      service: data-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    image: datalens-dev:data-api
+    build:
+      context: ./dev/python
+      args:
+        - image=ghcr.io/datalens-tech/datalens-data-api:0.2457.0
+    tty: true
+    environment:
+      RUN_DEV: /etc/service/dl_api/run
+      PRETTY_LOG: ${PRETTY_LOG:-false}
+    volumes:
+      - ../datalens-backend/app:/src/app
+      - ../datalens-backend/lib:/src/lib
+      - ../datalens-backend/metapkg:/src/metapkg
+    ports:
+      - 8020:8080
+    networks:
+      - default
+  #
+  us:
+    extends:
+      file: docker-compose.yaml
+      service: us
+    depends_on:
+      postgres:
+        condition: service_healthy
+    image: datalens-dev:us
+    build:
+      context: ./dev/nodejs
+      args:
+        - image=ghcr.io/datalens-tech/datalens-us:1.39.0
+    tty: true
+    user: ${USER_DEV:-app}
+    environment:
+      RUN_DEV: npx tsc-watch --onSuccess ./scripts/preflight.sh
+    volumes:
+      - ${DIR_REPO_US:-../datalens-us}:/opt/app
+      - ./dev/.env.empty:/opt/app/.env
+      - ./dev/.env.empty:/opt/app/.env.development
+      - node-modules-us:/opt/app/node_modules
+      - pnpm-store:/opt/app/.pnpm-store
+    ports:
+      - 3030:8080
+    networks:
+      - default
+  #
+  ui-api:
+    extends:
+      file: docker-compose.yaml
+      service: ui-api
+    depends_on:
+      - us
+    image: datalens-dev:ui-api
+    build:
+      context: ./dev/nodejs
+      args:
+        - image=ghcr.io/datalens-tech/datalens-ui:0.3831.0
+    tty: true
+    user: ${USER_DEV:-app}
+    ulimits:
+      core: 0
+    environment:
+      APP_PORT_UNSET: 1
+      RUN_DEV: pnpm run i18n:prepare && pnpm exec app-builder dev
+    volumes:
+      - ${DIR_REPO_UI:-../datalens-ui}:/opt/app
+      - ./dev/.env.empty:/opt/app/.env
+      - node-modules-ui-api:/opt/app/node_modules
+      - pnpm-store:/opt/app/.pnpm-store
+    ports:
+      - 3040:8080
+    networks:
+      - default
+  #
+  meta-manager:
+    extends:
+      file: docker-compose.yaml
+      service: meta-manager
+    depends_on:
+      temporal:
+        condition: service_healthy
+      ui-api:
+        condition: service_started
+    image: datalens-dev:meta-manager
+    build:
+      context: ./dev/nodejs
+      args:
+        - image=ghcr.io/datalens-tech/datalens-meta-manager:0.52.0
+    tty: true
+    user: ${USER_DEV:-app}
+    environment:
+      RUN_DEV: npx tsc-watch --onSuccess ./scripts/preflight.sh
+    volumes:
+      - ../datalens-meta-manager:/opt/app
+      - ./dev/.env.empty:/opt/app/.env
+      - ./dev/.env.empty:/opt/app/.env.development
+      - node-modules-meta-manager:/opt/app/node_modules
+    ports:
+      - 3050:8080
+    networks:
+      - default
+  #
+  auth:
+    extends:
+      file: docker-compose.yaml
+      service: auth
+    depends_on:
+      postgres:
+        condition: service_healthy
+    image: datalens-dev:auth
+    build:
+      context: ./dev/nodejs
+      args:
+        - image=ghcr.io/datalens-tech/datalens-auth:0.27.0
+    tty: true
+    user: ${USER_DEV:-app}
+    environment:
+      RUN_DEV: npx tsc-watch --onSuccess ./scripts/preflight.sh
+    volumes:
+      - ../datalens-auth:/opt/app
+      - ./dev/.env.empty:/opt/app/.env
+      - ./dev/.env.empty:/opt/app/.env.development
+      - node-modules-auth:/opt/app/node_modules
+    ports:
+      - 8088:8080
+    networks:
+      - default
+  #
+  ui:
+    extends:
+      file: docker-compose.yaml
+      service: ui
+    image: datalens-dev:ui
+    build:
+      context: ./dev/nodejs
+      args:
+        - image=ghcr.io/datalens-tech/datalens-ui:0.3831.0
+    tty: true
+    user: ${USER_DEV:-app}
+    ulimits:
+      core: 0
+    environment:
+      APP_PORT_UNSET: 1
+      RUN_DEV: pnpm run i18n:prepare && pnpm exec app-builder dev
+    volumes:
+      - ${DIR_REPO_UI:-../datalens-ui}:/opt/app
+      - ./dev/.env.empty:/opt/app/.env
+      - node-modules-ui:/opt/app/node_modules
+      - pnpm-store:/opt/app/.pnpm-store
+    ports:
+      - 8080:8080
+      - 8880:8880
+    depends_on:
+      - us
+    networks:
+      - default
+  #
+  nginx:
+    container_name: nginx
+    image: datalens-dev:nginx
+    build:
+      context: ./dev/nginx
+    environment:
+      DOMAIN: ${DOMAIN:-datalens.local}
+      ENDPOINT: ui:8080
+    volumes:
+      - ./dev/certs:/etc/certs/:ro
+    ports:
+      - 443:443
+    depends_on:
+      - ui
+    networks:
+      - default
+  #
+  socat:
+    container_name: socat
+    image: datalens-dev:socat
+    build:
+      context: ./dev/socat
+    environment:
+      PORTS: ${EXPOSE_PORTS:-}
+    ports:
+      - ${EXPOSE_PORTS_3030:-0}:3030
+      - ${EXPOSE_PORTS_3040:-0}:3040
+      - ${EXPOSE_PORTS_3050:-0}:3050
+      - 5432:5432
+      - 7233:7233
+      - ${EXPOSE_PORTS_8010:-0}:8010
+      - ${EXPOSE_PORTS_8020:-0}:8020
+      - ${EXPOSE_PORTS_8088:-0}:8088
+    networks:
+      - default
+#
+volumes:
+  db-postgres:
+  node-modules-ui:
+  node-modules-ui-api:
+  node-modules-us:
+  node-modules-auth:
+  node-modules-meta-manager:
+  pnpm-store:
+#
+networks:
+  default:
+    enable_ipv6: ${IS_IPV6:-false}

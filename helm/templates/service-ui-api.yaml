@@ -1,0 +1,13 @@
+{{- if and .Values.features.export.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-ui-api-cip
+spec:
+  selector:
+    app: app-ui-api
+  ports:
+  - protocol: TCP
+    port: 8080
+  type: ClusterIP
+{{- end }}

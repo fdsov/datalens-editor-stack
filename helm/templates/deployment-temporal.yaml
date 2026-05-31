@@ -1,0 +1,86 @@
+{{- if .Values.infra.temporal.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datalens-temporal
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: temporal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: temporal
+  template:
+    metadata:
+      labels:
+        app: temporal
+    spec:
+      containers:
+        - name: temporal
+          image: "{{ .Values.registry.url }}/datalens-temporal:1.27.2"
+          ports:
+            - containerPort: 7233
+          env:
+            - name: POSTGRES_HOST
+              value: {{ .Values.postgres.POSTGRES_HOST }}
+            - name: POSTGRES_PORT
+              value: {{ .Values.postgres.POSTGRES_PORT | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.POSTGRES_USER }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.POSTGRES_DB_TEMPORAL }}
+            - name: POSTGRES_DB_VISIBILITY
+              value: {{ .Values.postgres.POSTGRES_DB_TEMPORAL_VISIBILITY }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "datalens-secrets" .Values.secrets.ref }}
+                  key: POSTGRES_PASSWORD
+            - name: TEMPORAL_AUTH_ENABLED
+              value: {{ .Values.infra.temporal.auth | quote }}
+            - name: TEMPORAL_AUTH_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "datalens-secrets" .Values.secrets.ref }}
+                  key: TEMPORAL_AUTH_PUBLIC_KEY
+            - name: TEMPORAL_AUTH_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "datalens-secrets" .Values.secrets.ref }}
+                  key: TEMPORAL_AUTH_PRIVATE_KEY
+            - name: NAMESPACES
+              value: meta-manager
+            {{- if and .Values.infra.postgres.tls.enabled }}
+            - name: POSTGRES_TLS_ENABLED
+              value: "true"
+            - name: POSTGRES_TLS_DISABLE_HOST_VERIFICATION
+              value: "false"
+            {{- end }}
+            {{- if or .Values.infra.postgres.tls.secret.ref .Values.infra.postgres.tls.secret.ca }}
+            - name: POSTGRES_TLS_CA_FILE
+              value: "/certs/postgres-ca.crt"
+            {{- end }}
+          {{- if and .Values.infra.postgres.tls.enabled (or .Values.infra.postgres.tls.secret.ref .Values.infra.postgres.tls.secret.ca) }}
+          volumeMounts:
+          - name: postgres-tls
+            mountPath: /certs/postgres-ca.crt
+            subPath: ca.crt
+            readOnly: true
+          {{- end }}
+          resources:
+            requests:
+              cpu: {{ .Values.infra.temporal.resources.requests.cpu }}
+              memory: {{ .Values.infra.temporal.resources.requests.memory }}
+            limits:
+              {{- if .Values.infra.temporal.resources.limits.cpu }}
+              cpu: {{ .Values.infra.temporal.resources.limits.cpu }}
+              {{- end }}
+              memory: {{ .Values.infra.temporal.resources.limits.memory }}
+      {{- if and .Values.infra.postgres.tls.enabled (or .Values.infra.postgres.tls.secret.ref .Values.infra.postgres.tls.secret.ca) }}
+      volumes:
+        - name: postgres-tls
+          secret:
+            secretName: {{ default "postgres-tls-secret" .Values.infra.postgres.tls.secret.ref }}
+      {{- end }}
+{{- end }}

@@ -1,0 +1,14 @@
+{{- if and .Values.features.export.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-meta-manager-cip
+spec:
+  selector:
+    app: app-meta-manager
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+  type: ClusterIP
+{{- end }}

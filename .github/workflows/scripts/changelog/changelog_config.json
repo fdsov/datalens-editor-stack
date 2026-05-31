@@ -1,0 +1,195 @@
+{
+  "repositories": [
+    {
+      "name": "datalens",
+      "url": "https://github.com/datalens-tech/datalens"
+    },
+    {
+      "name": "datalens-ui",
+      "url": "https://github.com/datalens-tech/datalens-ui",
+      "images": [
+        {
+          "name": "datalens-ui",
+          "version_descriptor": "uiVersion"
+        }
+      ]
+    },
+    {
+      "name": "datalens-backend",
+      "url": "https://github.com/datalens-tech/datalens-backend",
+      "images": [
+        {
+          "name": "datalens-control-api",
+          "version_descriptor": "backendVersion"
+        },
+        {
+          "name": "datalens-data-api",
+          "version_descriptor": "backendVersion"
+        }
+      ]
+    },
+    {
+      "name": "datalens-us",
+      "url": "https://github.com/datalens-tech/datalens-us",
+      "images": [
+        {
+          "name": "datalens-us",
+          "version_descriptor": "usVersion"
+        }
+      ]
+    },
+    {
+      "name": "datalens-auth",
+      "url": "https://github.com/datalens-tech/datalens-auth",
+      "images": [
+        {
+          "name": "datalens-auth",
+          "version_descriptor": "authVersion"
+        }
+      ]
+    },
+    {
+      "name": "datalens-meta-manager",
+      "url": "https://github.com/datalens-tech/datalens-meta-manager",
+      "images": [
+        {
+          "name": "datalens-meta-manager",
+          "version_descriptor": "metaManagerVersion"
+        }
+      ]
+    }
+  ],
+  "changelog_include_label": "changelog",
+  "include_root_repo_changes": true,
+  "release_version_descriptor": "releaseVersion",
+  "images_versions_section": "Image versions",
+  "other_changes_section": "Other",
+  "single_section_title": "Changes",
+  "no_changes_message": "Minor improvements",
+  "section_tags": {
+    "prefix": "type/",
+    "tags": [
+      {
+        "id": "breaking-change",
+        "text": "Breaking changes"
+      },
+      {
+        "id": "feat",
+        "text": "New features"
+      },
+      {
+        "id": "fix",
+        "text": "Bug fixes"
+      },
+      {
+        "id": "sec",
+        "text": "Security"
+      },
+      {
+        "id": "deps",
+        "text": "Dependencies"
+      },
+      {
+        "id": "deprecation",
+        "text": "Deprecation"
+      },
+      {
+        "id": "dev",
+        "text": "Development"
+      },
+      {
+        "id": "test",
+        "text": "Tests"
+      },
+      {
+        "id": "ci",
+        "text": "CI"
+      },
+      {
+        "id": "chore",
+        "text": "Chores"
+      },
+      {
+        "id": "build",
+        "text": "Build"
+      },
+      {
+        "id": "docs",
+        "text": "Docs"
+      },
+      {
+        "id": "deploy",
+        "text": "Deploy"
+      },
+      {
+        "id": "refactor",
+        "text": "Refactor"
+      },
+      {
+        "id": "perf",
+        "text": "Performance"
+      },
+      {
+        "id": "revert",
+        "text": "Revert"
+      },
+      {
+        "id": "infra",
+        "text": "Infrastructure"
+      }
+    ]
+  },
+  "component_tags": {
+    "prefix": "component/",
+    "tags": [
+      {
+        "id": "charts",
+        "text": "Charts"
+      },
+      {
+        "id": "connectors",
+        "text": "Connectors"
+      },
+      {
+        "id": "navigation",
+        "text": "Navigation"
+      },
+      {
+        "id": "general",
+        "text": "General components"
+      },
+      {
+        "id": "dashboards",
+        "text": "Dashboards"
+      },
+      {
+        "id": "datasets",
+        "text": "Datasets"
+      },
+      {
+        "id": "auth",
+        "text": "Auth"
+      },
+      {
+        "id": "optimization",
+        "text": "Optimization"
+      },
+      {
+        "id": "role-model",
+        "text": "Role model"
+      },
+      {
+        "id": "docs",
+        "text": "Docs"
+      },
+      {
+        "id": "formula",
+        "text": "Formula"
+      },
+      {
+        "id": "embeds",
+        "text": "Embeds"
+      }
+    ]
+  }
+}

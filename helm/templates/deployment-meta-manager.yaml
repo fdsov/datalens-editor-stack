@@ -1,0 +1,97 @@
+{{- if and .Values.features.export.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datalens-meta-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: app-meta-manager
+spec:
+  replicas: {{ .Values.application.meta_manager.replicas }}
+  selector:
+    matchLabels:
+      app: app-meta-manager
+  template:
+    metadata:
+      labels:
+        app: app-meta-manager
+    spec:
+      containers:
+        - name: app-meta-manager
+          image: "{{ .Values.registry.url }}/datalens-meta-manager:{{ .Values.application.meta_manager.version }}"
+          ports:
+            - containerPort: 8080
+          env:
+            - name: APP_INSTALLATION
+              value: opensource
+            - name: APP_ENV
+              value: prod
+            - name: APP_PORT
+              value: '8080'
+            - name: US_ENDPOINT
+              value: http://app-us-cip:8080
+            - name: UI_API_ENDPOINT
+              value: http://app-ui-api-cip:8080
+            - name: TEMPORAL_ENDPOINT
+              value: temporal-cip:7233
+            - name: US_MASTER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "datalens-secrets" .Values.secrets.ref }}
+                  key: US_MASTER_TOKEN
+            - name: EXPORT_DATA_VERIFICATION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "datalens-secrets" .Values.secrets.ref }}
+                  key: EXPORT_DATA_VERIFICATION_KEY
+            - name: POSTGRES_DSN_LIST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "datalens-secrets" .Values.secrets.ref }}
+                  key: POSTGRES_DSN_LIST_META_MANAGER
+            {{- if .Values.infra.temporal.enabled }}
+            {{- if .Values.infra.temporal.auth }}
+            - name: TEMPORAL_AUTH_ENABLED
+              value: 'true'
+            - name: TEMPORAL_AUTH_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "datalens-secrets" .Values.secrets.ref }}
+                  key: TEMPORAL_AUTH_PRIVATE_KEY
+            {{- else }}
+            - name: TEMPORAL_AUTH_ENABLED
+              value: 'false'
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.features.auth.enabled }}
+            - name: AUTH_ENABLED
+              value: 'true'
+            - name: AUTH_TOKEN_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "datalens-secrets" .Values.secrets.ref }}
+                  key: AUTH_TOKEN_PUBLIC_KEY
+            {{- end }}
+          {{- if and .Values.infra.postgres.tls.enabled (or .Values.infra.postgres.tls.secret.ref .Values.infra.postgres.tls.secret.ca) }}
+          volumeMounts:
+          - name: postgres-tls
+            mountPath: /certs/postgres-ca.crt
+            subPath: ca.crt
+            readOnly: true
+          {{- end }}
+          resources:
+            requests:
+              cpu: {{ .Values.application.meta_manager.resources.requests.cpu }}
+              memory: {{ .Values.application.meta_manager.resources.requests.memory }}
+            limits:
+              {{- if .Values.application.meta_manager.resources.limits.cpu }}
+              cpu: {{ .Values.application.meta_manager.resources.limits.cpu }}
+              {{- end }}
+              memory: {{ .Values.application.meta_manager.resources.limits.memory }}
+      {{- if and .Values.infra.postgres.tls.enabled (or .Values.infra.postgres.tls.secret.ref .Values.infra.postgres.tls.secret.ca) }}
+      volumes:
+        - name: postgres-tls
+          secret:
+            secretName: {{ default "postgres-tls-secret" .Values.infra.postgres.tls.secret.ref }}
+      {{- end }}
+{{- end }}
