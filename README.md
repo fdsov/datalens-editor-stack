@@ -32,8 +32,8 @@ The Chart Editor is enabled (`EnableChartEditor`), the "Editor chart" option app
 
 ```bash
 git clone https://github.com/fdsov/datalens-ui-editor.git
-git -C datalens-ui-editor checkout 8154fbdb09625130f626f9886379ff808e40cbc7
-docker build -t datalens-ui:0.3831.0-editor-8154fbd ./datalens-ui-editor
+git -C datalens-ui-editor checkout 0efbbabcf20de36e9e2d11be88d011b2d3740614
+docker build -t datalens-ui:0.3831.0-editor-0efbbab ./datalens-ui-editor
 # the compose `image:` already points at this tag, so `docker compose up -d` will use it
 ```
 
@@ -59,7 +59,7 @@ The separate `Upstream Compatibility Tests` workflow retains the original tests
 against official images; it does not validate the restored editor.
 
 The Compose build context is pinned to UI commit
-`8154fbdb09625130f626f9886379ff808e40cbc7`, and the image tag includes its short SHA.
+`0efbbabcf20de36e9e2d11be88d011b2d3740614`, and the image tag includes its short SHA.
 Update both UI service contexts and image tags together when upgrading the editor.
 
 ## License & attribution
@@ -194,8 +194,8 @@ Build the pinned editor source used by Compose and push it to a registry accessi
 to your Kubernetes nodes (replace `registry.example.com/team` with your registry):
 
 ```bash
-EDITOR_IMAGE=registry.example.com/team/datalens-ui:editor-8154fbd
-docker build -t "$EDITOR_IMAGE" https://github.com/fdsov/datalens-ui-editor.git#8154fbdb09625130f626f9886379ff808e40cbc7
+EDITOR_IMAGE=registry.example.com/team/datalens-ui:editor-0efbbab
+docker build -t "$EDITOR_IMAGE" https://github.com/fdsov/datalens-ui-editor.git#0efbbabcf20de36e9e2d11be88d011b2d3740614
 docker push "$EDITOR_IMAGE"
 printf 'application:\n  editor_image: "%s"\n' "$EDITOR_IMAGE" > editor-values.yaml
 ```
@@ -420,3 +420,39 @@ Minimal configuration:
 * CPU - 2 CORES
 
 These are the minimal basic system requirements for OpenSource DataLens installation. Actual resource consumption depends on the complexity of requests, connection types, number of users, and processing speed at the source level.
+
+## Production ACL and signed embedding
+
+The pinned UI includes the production ACL dialog and embedded dashboard/chart pages.
+Their backend APIs require the private companion repository `fdsov/datalens-us-acl`.
+The base Compose file keeps upstream United Storage for editor-only installations.
+To enable the companion backend, use the explicit override below; access to the
+private repository is required, and its visibility is not changed by this stack.
+
+```bash
+gh repo clone fdsov/datalens-us-acl ../datalens-us-acl
+git -C ../datalens-us-acl checkout 9c628fc05f74aab1c3d4ccd778ed61d0279dcec7
+docker compose -f docker-compose.yaml -f compose.acl.yaml build us ui ui-api
+docker compose -f docker-compose.yaml -f compose.acl.yaml up -d --no-build
+```
+
+Always include `compose.acl.yaml` on subsequent updates of this installation. Set
+`US_ACL_SOURCE` if the checkout is stored elsewhere. The pinned backend adds its
+schema through the normal startup migrations. Back up the database before upgrading.
+
+Set `EMBED_SERVICE_LOGIN` and `EMBED_SERVICE_PASSWORD` in the deployment environment
+(or its existing `.env`) to a dedicated non-admin DataLens user. Give that user read
+access to the workbooks used by embeds. Configure signing keys and embed dependencies
+through the embedding APIs; keep private signing keys outside the UI.
+
+ACL enforcement stays off by default. First provision user/group/workbook access
+bindings, then set `NATIVE_ACL_ENFORCE=true` and recreate `us` with the same override.
+Missing bindings deny access once enforcement is enabled. Preserve the flag and
+service credentials from an existing ACL deployment when upgrading.
+
+For Helm, build/push the same private backend checkout and set `application.us.image`
+to its full image reference. Set `application.us.native_acl_enforce` only after
+provisioning bindings. For embedding, create a Kubernetes Secret containing
+`EMBED_SERVICE_LOGIN` and `EMBED_SERVICE_PASSWORD`, then set
+`application.ui.embedding_secret_ref` to that Secret's name. The chart rejects ACL
+or embedding configuration without an explicit companion backend image.

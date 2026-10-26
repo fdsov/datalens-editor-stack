@@ -1,0 +1,13 @@
+# Optional production ACL/embedding backend. The source repository is private.
+# Checkout the documented commit into US_ACL_SOURCE before building.
+services:
+  us:
+    image: datalens-us:1.39.0-acl-embed-9c628fc
+    build:
+      context: ${US_ACL_SOURCE:-../datalens-us-acl}
+    environment:
+      NATIVE_ACL_ENFORCE: ${NATIVE_ACL_ENFORCE:-false}
+  ui:
+    environment:
+      EMBED_SERVICE_LOGIN: ${EMBED_SERVICE_LOGIN:-}
+      EMBED_SERVICE_PASSWORD: ${EMBED_SERVICE_PASSWORD:-}
