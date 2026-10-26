@@ -165,11 +165,11 @@ services:
   #
   ui-api:
     container_name: datalens-ui-api
-    image: datalens-ui:0.3831.0-editor-709add9
+    image: datalens-ui:0.3831.0-editor-8154fbd
     # Builds the editor image from the published fork if it is not present locally.
     # (requires BuildKit; ~8 min, ~4GB RAM). See README "Deploy".
     build:
-      context: https://github.com/fdsov/datalens-ui-editor.git#709add97450cdcb7f5bdac096b7ccbcebcf05f8b
+      context: https://github.com/fdsov/datalens-ui-editor.git#8154fbdb09625130f626f9886379ff808e40cbc7
     environment:
       APP_MODE: api
       APP_ENV: production
@@ -245,11 +245,11 @@ services:
   #
   ui:
     container_name: datalens-ui
-    image: datalens-ui:0.3831.0-editor-709add9
+    image: datalens-ui:0.3831.0-editor-8154fbd
     # Builds the editor image from the published fork if it is not present locally.
     # (requires BuildKit; ~8 min, ~4GB RAM). See README "Deploy".
     build:
-      context: https://github.com/fdsov/datalens-ui-editor.git#709add97450cdcb7f5bdac096b7ccbcebcf05f8b
+      context: https://github.com/fdsov/datalens-ui-editor.git#8154fbdb09625130f626f9886379ff808e40cbc7
     environment:
       APP_MODE: full
       APP_ENV: production

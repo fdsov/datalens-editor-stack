@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: app-ui
-          image: "{{ .Values.registry.url }}/datalens-ui:{{ .Values.application.ui.version }}"
+          image: {{ required "Set application.editor_image to the full image reference of a built datalens-ui-editor image (see README)." .Values.application.editor_image | quote }}
           ports:
             - containerPort: 8080
           env:
