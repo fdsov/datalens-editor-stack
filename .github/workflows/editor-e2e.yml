@@ -1,0 +1,42 @@
+name: Editor Stack E2E
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: editor-e2e-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  editor-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      COMPOSE_PROJECT_NAME: editor-ci
+      # Only this disposable CI stack runs without authentication.
+      AUTH_ENABLED: 'false'
+      AUTH_TYPE: NONE
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate deployment configuration
+        run: docker compose config --quiet
+      - name: Build the editor images from the deployment configuration
+        run: docker compose build ui ui-api
+      - name: Pull infrastructure images
+        run: docker compose pull --ignore-buildable
+      - name: Start the actual editor stack
+        run: docker compose up -d --no-build --pull never
+      - name: Verify editor execution through the UI API
+        run: docker compose exec -T ui node --input-type=module < scripts/editor-smoke.mjs
+      - name: Collect service logs
+        if: failure()
+        run: docker compose logs --no-color --tail=200
+      - name: Stop the CI stack
+        if: always()
+        run: docker compose down

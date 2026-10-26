@@ -21,6 +21,8 @@ permissions:
 
 jobs:
   run:
+    # Upstream release automation requires GH_TOKEN and rewrites upstream image versions.
+    if: github.repository == 'datalens-tech/datalens'
     name: yq
     runs-on: ubuntu-latest
     steps:

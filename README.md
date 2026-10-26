@@ -32,7 +32,8 @@ The Chart Editor is enabled (`EnableChartEditor`), the "Editor chart" option app
 
 ```bash
 git clone https://github.com/fdsov/datalens-ui-editor.git
-docker build -t datalens-ui:0.3831.0-editor ./datalens-ui-editor
+git -C datalens-ui-editor checkout 709add97450cdcb7f5bdac096b7ccbcebcf05f8b
+docker build -t datalens-ui:0.3831.0-editor-709add9 ./datalens-ui-editor
 # the compose `image:` already points at this tag, so `docker compose up -d` will use it
 ```
 
@@ -44,6 +45,22 @@ crypto keypairs) — identical to what `datalens-tech/datalens` ships. **They ar
 public.** For any internet-facing or production deployment, override them via environment
 variables / a `.env` file (and generate fresh keys) — see the upstream documentation below and
 `init.sh`. The default `ui` config also runs with `AUTH_POLICY: disabled`.
+
+## Editor regression checks
+
+The `Editor Stack E2E` workflow builds `ui` and `ui-api` from this repository's
+Compose configuration, starts that stack, and exercises `/api/run` with a
+`table_node` chart. It checks the bundled dataset helper, a link alias containing
+quotes and backslashes, and the resulting rows. Fixture data is used; this is not
+a database connector or browser rendering test. Authentication is disabled only
+in this disposable CI job.
+
+The separate `Upstream Compatibility Tests` workflow retains the original tests
+against official images; it does not validate the restored editor.
+
+The Compose build context is pinned to UI commit
+`709add97450cdcb7f5bdac096b7ccbcebcf05f8b`, and the image tag includes its short SHA.
+Update both UI service contexts and image tags together when upgrading the editor.
 
 ## License & attribution
 
