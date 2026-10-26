@@ -32,8 +32,8 @@ The Chart Editor is enabled (`EnableChartEditor`), the "Editor chart" option app
 
 ```bash
 git clone https://github.com/fdsov/datalens-ui-editor.git
-git -C datalens-ui-editor checkout 709add97450cdcb7f5bdac096b7ccbcebcf05f8b
-docker build -t datalens-ui:0.3831.0-editor-709add9 ./datalens-ui-editor
+git -C datalens-ui-editor checkout 8154fbdb09625130f626f9886379ff808e40cbc7
+docker build -t datalens-ui:0.3831.0-editor-8154fbd ./datalens-ui-editor
 # the compose `image:` already points at this tag, so `docker compose up -d` will use it
 ```
 
@@ -59,7 +59,7 @@ The separate `Upstream Compatibility Tests` workflow retains the original tests
 against official images; it does not validate the restored editor.
 
 The Compose build context is pinned to UI commit
-`709add97450cdcb7f5bdac096b7ccbcebcf05f8b`, and the image tag includes its short SHA.
+`8154fbdb09625130f626f9886379ff808e40cbc7`, and the image tag includes its short SHA.
 Update both UI service contexts and image tags together when upgrading the editor.
 
 ## License & attribution
@@ -187,7 +187,27 @@ All your user settings, connections, and created objects will be preserved as th
 
 ## Deploy with Helm chart in k8s cluster
 
-For deployment in a Kubernetes cluster, you can use Helm chart from an OCI-compatible package registry
+Use the local `./helm` chart from this repository. The upstream OCI chart deploys
+DataLens without the restored editor.
+
+Build the pinned editor source used by Compose and push it to a registry accessible
+to your Kubernetes nodes (replace `registry.example.com/team` with your registry):
+
+```bash
+EDITOR_IMAGE=registry.example.com/team/datalens-ui:editor-8154fbd
+docker build -t "$EDITOR_IMAGE" https://github.com/fdsov/datalens-ui-editor.git#8154fbdb09625130f626f9886379ff808e40cbc7
+docker push "$EDITOR_IMAGE"
+printf 'application:\n  editor_image: "%s"\n' "$EDITOR_IMAGE" > editor-values.yaml
+```
+
+For private registries, configure image pull credentials on the namespace's default
+ServiceAccount before installing. Build for your cluster's CPU architecture.
+`application.editor_image` accepts a full image tag or digest and is required for
+both `ui` and `ui-api`. Backend images still use `registry.url`.
+
+Chart 3.0 removes the old `application.ui.version` and unused
+`application.ui_api.version` settings. When upgrading, supply `editor-values.yaml`
+alongside your existing values file.
 
 First install Helm release:
 
@@ -202,7 +222,7 @@ BI_DYNAMIC_US_AUTH_PUBLIC_KEY=$(echo "${BI_DYNAMIC_US_AUTH_PRIVATE_KEY}" | opens
 UI_DYNAMIC_US_AUTH_PRIVATE_KEY=$(openssl genpkey -algorithm RSA -pkeyopt "rsa_keygen_bits:4096" 2>/dev/null)
 UI_DYNAMIC_US_AUTH_PUBLIC_KEY=$(echo "${UI_DYNAMIC_US_AUTH_PRIVATE_KEY}" | openssl rsa -pubout 2>/dev/null)
 
-helm upgrade --install datalens oci://ghcr.io/datalens-tech/helm/datalens \
+helm upgrade --install datalens ./helm -f editor-values.yaml \
 --namespace datalens --create-namespace \
 --set "secrets.AUTH_TOKEN_PRIVATE_KEY=${AUTH_TOKEN_PRIVATE_KEY}" \
 --set "secrets.AUTH_TOKEN_PUBLIC_KEY=${AUTH_TOKEN_PUBLIC_KEY}" \
@@ -219,7 +239,7 @@ helm upgrade --install datalens oci://ghcr.io/datalens-tech/helm/datalens \
 Update Helm release:
 
 ```bash
-helm upgrade datalens oci://ghcr.io/datalens-tech/helm/datalens --namespace datalens
+helm upgrade datalens ./helm --namespace datalens --reuse-values -f editor-values.yaml
 ```
 
 Admin login and password will be stored in `datalens-secrets` Kubernetes secret resource

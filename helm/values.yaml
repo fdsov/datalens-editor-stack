@@ -45,6 +45,9 @@ infra:
         memory: 512Mi
 #
 application:
+  # Required: full editor image reference (tag or digest), shared by ui and ui-api.
+  # Build this fork and push it to a registry accessible to your cluster.
+  editor_image: ""
   control_api:
     replicas: 1
     version: '0.2457.0'
@@ -67,7 +70,6 @@ application:
         memory: 1024Mi
   ui:
     replicas: 1
-    version: '0.3831.0'
     resources:
       requests:
         cpu: 0.25
@@ -77,7 +79,6 @@ application:
         memory: 512Mi
   ui_api:
     replicas: 1
-    version: '0.3831.0'
     resources:
       requests:
         cpu: 0.25
