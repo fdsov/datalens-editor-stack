@@ -17,10 +17,16 @@ spec:
     spec:
       containers:
         - name: app-us
-          image: "{{ .Values.registry.url }}/datalens-us:{{ .Values.application.us.version }}"
+          {{- if or .Values.application.us.native_acl_enforce .Values.application.ui.embedding_secret_ref }}
+          image: {{ required "Set application.us.image to the ACL/embedding backend image when enabling ACL or embedding." .Values.application.us.image | quote }}
+          {{- else }}
+          image: {{ .Values.application.us.image | default (printf "%s/datalens-us:%s" .Values.registry.url .Values.application.us.version) | quote }}
+          {{- end }}
           ports:
             - containerPort: 8080
           env:
+            - name: NATIVE_ACL_ENFORCE
+              value: {{ .Values.application.us.native_acl_enforce | quote }}
             - name: APP_INSTALLATION
               value: opensource
             - name: APP_ENV

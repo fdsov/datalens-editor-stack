@@ -21,6 +21,18 @@ spec:
           ports:
             - containerPort: 8080
           env:
+            {{- if .Values.application.ui.embedding_secret_ref }}
+            - name: EMBED_SERVICE_LOGIN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.application.ui.embedding_secret_ref | quote }}
+                  key: EMBED_SERVICE_LOGIN
+            - name: EMBED_SERVICE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.application.ui.embedding_secret_ref | quote }}
+                  key: EMBED_SERVICE_PASSWORD
+            {{- end }}
             - name: APP_INSTALLATION
               value: opensource
             - name: APP_ENV

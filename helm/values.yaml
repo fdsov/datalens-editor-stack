@@ -69,6 +69,8 @@ application:
         cpu: null
         memory: 1024Mi
   ui:
+    # Existing Kubernetes Secret with EMBED_SERVICE_LOGIN and EMBED_SERVICE_PASSWORD.
+    embedding_secret_ref: ""
     replicas: 1
     resources:
       requests:
@@ -87,6 +89,9 @@ application:
         cpu: null
         memory: 512Mi
   us:
+    # Optional full image reference for the private ACL/embedding companion fork.
+    image: ""
+    native_acl_enforce: false
     replicas: 1
     version: '1.39.0'
     resources:
